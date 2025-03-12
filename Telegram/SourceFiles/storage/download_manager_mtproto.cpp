@@ -23,16 +23,16 @@ namespace {
 constexpr auto kKillSessionTimeout = 15 * crl::time(1000);
 
 // 单个会话中初始等待的数据量,为4个下载分片大小
-constexpr auto kStartWaitedInSession = 2 * 4 * kDownloadPartSize;
+constexpr auto kStartWaitedInSession = 4 * kDownloadPartSize;
 
 // 单个会话中最大等待的数据量,为16个下载分片大小
-constexpr auto kMaxWaitedInSession = 2 * 16 * kDownloadPartSize;
+constexpr auto kMaxWaitedInSession = 16 * kDownloadPartSize;
 
 // 初始下载会话数量为1
 constexpr auto kStartSessionsCount = 8;
 
 // 最大下载会话数量为8
-constexpr auto kMaxSessionsCount = 8 * 4;
+constexpr auto kMaxSessionsCount = 8;
 
 // 最大跟踪的会话移除次数为64
 constexpr auto kMaxTrackedSessionRemoves = 64;
