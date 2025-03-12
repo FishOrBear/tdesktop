@@ -1126,7 +1126,7 @@ void Reader::checkCacheResultsForDownloader() {
 }
 
 void Reader::continueDownloaderFromMainThread() {
-	if (_streamingActive) {
+	if (false && _streamingActive) {
 		wakeFromSleep();
 	} else {
 		processDownloaderRequests();
