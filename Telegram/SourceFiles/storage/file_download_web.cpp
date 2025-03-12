@@ -15,8 +15,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 namespace {
 
-constexpr auto kMaxWebFileQueries = 8;
-constexpr auto kMaxHttpRedirects = 5;
+constexpr auto kMaxWebFileQueries = 8*2;
+constexpr auto kMaxHttpRedirects = 5*2;
 constexpr auto kResetDownloadPrioritiesTimeout = crl::time(200);
 constexpr auto kMaxWebFile = 4000 * int64(1024 * 1024);
 
