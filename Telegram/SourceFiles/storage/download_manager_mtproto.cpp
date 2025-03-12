@@ -29,10 +29,10 @@ constexpr auto kStartWaitedInSession = 2 * 4 * kDownloadPartSize;
 constexpr auto kMaxWaitedInSession = 2 * 16 * kDownloadPartSize;
 
 // 初始下载会话数量为1
-constexpr auto kStartSessionsCount = 4 *4;
+constexpr auto kStartSessionsCount = 8;
 
 // 最大下载会话数量为8
-constexpr auto kMaxSessionsCount = 8 *4;
+constexpr auto kMaxSessionsCount = 8 * 4;
 
 // 最大跟踪的会话移除次数为64
 constexpr auto kMaxTrackedSessionRemoves = 64;
