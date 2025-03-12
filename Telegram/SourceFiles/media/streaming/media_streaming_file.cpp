@@ -16,7 +16,7 @@ namespace Streaming {
 namespace {
 
 constexpr auto kMaxSingleReadAmount = 8 * 1024 * 1024;
-constexpr auto kMaxQueuedPackets = 1024;
+constexpr auto kMaxQueuedPackets = 1024 * 4;
 
 [[nodiscard]] bool UnreliableFormatDuration(
 		not_null<AVFormatContext*> format,
