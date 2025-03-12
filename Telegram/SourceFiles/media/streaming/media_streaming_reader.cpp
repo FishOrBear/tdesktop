@@ -15,17 +15,40 @@ namespace Media {
 namespace Streaming {
 namespace {
 
+// 使用加载器定义的分片大小作为基本分片大小
 constexpr auto kPartSize = Loader::kPartSize;
+
+// 每个分片组(slice)包含64个分片
+// 用于将连续的分片组织成更大的数据块
 constexpr auto kPartsInSlice = 64;
+
+// 一个分片组的总大小(字节)
+// = 分片数 * 分片大小
 constexpr auto kInSlice = uint32(kPartsInSlice * kPartSize);
+
+// 文件头部最多包含的分片数
+// 用于限制文件头部的大小
 constexpr auto kMaxPartsInHeader = 64;
+
+// 仅在文件头部允许的最大字节数(80个分片)
+// 超过此大小的数据需要分散存储
 constexpr auto kMaxOnlyInHeader = 80 * kPartSize;
+
+// 第一个分片组之外的良好分片数
+// 用于判断数据加载质量
 constexpr auto kPartsOutsideFirstSliceGood = 8;
+
+// 内存中保留的分片组数量
+// 控制内存中缓存的数据量
 constexpr auto kSlicesInMemory = 2;
 
-// 1 MB of parts are requested from cloud ahead of reading demand.
-constexpr auto kPreloadPartsAhead = 8;
-constexpr auto kDownloaderRequestsLimit = 4;
+// 预加载的分片数量为32(8*4)
+// 提前从云端请求1MB的数据(超前于当前读取需求)
+constexpr auto kPreloadPartsAhead = 8*4;
+
+// 同时进行的下载请求数量限制为16(4*4)
+// 控制并发下载数,防止请求过多
+constexpr auto kDownloaderRequestsLimit = 4*4;
 
 using PartsMap = base::flat_map<uint32, QByteArray>;
 
