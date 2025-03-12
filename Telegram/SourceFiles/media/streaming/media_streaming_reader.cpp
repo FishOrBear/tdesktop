@@ -44,11 +44,11 @@ constexpr auto kSlicesInMemory = 2;
 
 // 预加载的分片数量为32(8*4)
 // 提前从云端请求1MB的数据(超前于当前读取需求)
-constexpr auto kPreloadPartsAhead = 8*4;
+constexpr auto kPreloadPartsAhead = 8*6;
 
 // 同时进行的下载请求数量限制为16(4*4)
 // 控制并发下载数,防止请求过多
-constexpr auto kDownloaderRequestsLimit = 4*4;
+constexpr auto kDownloaderRequestsLimit = 4*6;
 
 using PartsMap = base::flat_map<uint32, QByteArray>;
 
