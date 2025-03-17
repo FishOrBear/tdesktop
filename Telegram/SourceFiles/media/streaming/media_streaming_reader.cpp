@@ -48,7 +48,7 @@ constexpr auto kPreloadPartsAhead = 8*6;
 
 // 同时进行的下载请求数量限制为16(4*4)
 // 控制并发下载数,防止请求过多
-constexpr auto kDownloaderRequestsLimit = 4 * 8;
+constexpr auto kDownloaderRequestsLimit = 8 * 8;
 
 using PartsMap = base::flat_map<uint32, QByteArray>;
 
