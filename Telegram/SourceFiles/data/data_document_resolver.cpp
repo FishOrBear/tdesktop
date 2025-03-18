@@ -194,7 +194,7 @@ void ResolveDocument(
 	const auto msgId = item ? item->fullId() : FullMsgId();
 
 	const auto showDocument = [&] {
-		if (OptionExternalVideoPlayer.value()
+		if ((true || OptionExternalVideoPlayer.value())
 			&& document->isVideoFile()
 			&& !document->filepath().isEmpty()) {
 			File::Launch(document->location(false).fname);
