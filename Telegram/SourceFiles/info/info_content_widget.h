@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "info/info_wrap_widget.h"
 #include "info/statistics/info_statistics_tag.h"
+#include "ui/controls/swipe_handler_data.h"
 
 namespace Api {
 struct WhoReadList;
@@ -167,6 +168,8 @@ private:
 	RpWidget *doSetInnerWidget(object_ptr<RpWidget> inner);
 	void updateControlsGeometry();
 	void refreshSearchField(bool shown);
+	void setupSwipeHandler(not_null<Ui::RpWidget*> widget);
+	void updateInnerPadding();
 
 	virtual std::shared_ptr<ContentMemento> doCreateMemento() = 0;
 
@@ -181,6 +184,8 @@ private:
 	base::unique_qptr<Ui::RpWidget> _searchWrap = nullptr;
 	QPointer<Ui::InputField> _searchField;
 	int _innerDesiredHeight = 0;
+	int _additionalScroll = 0;
+	int _addedHeight = 0;
 	int _maxVisibleHeight = 0;
 	bool _isStackBottom = false;
 
@@ -189,6 +194,8 @@ private:
 
 	// To paint round edges from content.
 	style::margins _paintPadding;
+
+	Ui::Controls::SwipeBackResult _swipeBackData;
 
 };
 
