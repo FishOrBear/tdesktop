@@ -1146,7 +1146,8 @@ void Reader::setLoaderPriority(int priority) {
 }
 
 void Reader::refreshLoaderPriority() {
-	_loader->setPriority(_streamingActive ? _realPriority : 0);
+	//_loader->setPriority(_streamingActive ? _realPriority : 0);
+	_loader->setPriority(0);
 }
 
 bool Reader::isRemoteLoader() const {
