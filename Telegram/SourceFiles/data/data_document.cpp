@@ -1323,6 +1323,7 @@ QByteArray documentWaveformEncode5bit(const VoiceWaveform &waveform) {
 	return result;
 }
 
+//文件位置 未来可能需要hack
 const Core::FileLocation &DocumentData::location(bool check) const {
 	if (check && !_location.check()) {
 		const auto location = session().local().readFileLocation(mediaKey());

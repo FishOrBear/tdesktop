@@ -84,7 +84,7 @@ public:
 	~Reader();
 
 private:
-	static constexpr auto kLoadFromRemoteMax = 8;
+	static constexpr auto kLoadFromRemoteMax = 64;//这个是播放时速度提升的关键
 
 	struct CacheHelper;
 

@@ -233,6 +233,13 @@ void ShowInFolder(not_null<DocumentData*> document) {
 	}
 }
 
+void OpenDocExtra(not_null<DocumentData*> document) {
+	const auto filepath = document->filepath(true);
+	if (!filepath.isEmpty()) {
+		File::Launch(filepath);
+	}
+}
+
 void AddSaveDocumentAction(
 		not_null<Ui::PopupMenu*> menu,
 		HistoryItem *item,
@@ -320,6 +327,11 @@ void AddDocumentActions(
 				? tr::lng_context_show_in_finder(tr::now)
 				: tr::lng_context_show_in_folder(tr::now)),
 			[=] { ShowInFolder(document); },
+			&st::menuIconShowInFolder);
+
+		menu->addAction(
+			tr::lng_context_open_extra(tr::now),
+			[=] { OpenDocExtra(document); },
 			&st::menuIconShowInFolder);
 	}
 	if (document->hasAttachedStickers()) {

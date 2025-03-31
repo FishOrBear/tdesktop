@@ -194,7 +194,7 @@ void ResolveDocument(
 	const auto msgId = item ? item->fullId() : FullMsgId();
 
 	const auto showDocument = [&] {
-		if (OptionExternalVideoPlayer.value()
+		if ((true || OptionExternalVideoPlayer.value())//在文件下载完成后,可以直接使用外部播放器打开
 			&& document->isVideoFile()
 			&& !document->filepath().isEmpty()) {
 			File::Launch(document->location(false).fname);
