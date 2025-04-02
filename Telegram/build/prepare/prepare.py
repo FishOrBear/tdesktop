@@ -562,7 +562,6 @@ win:
         -DCMAKE_C_FLAGS_DEBUG="/MTd /Zi /Ob0 /Od /RTC1" ^
         -DCMAKE_C_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG" ^
         -DCMAKE_C_FLAGS="/DZLIB_WINAPI"
-    cmake --build . --config Debug --parallel
 release:
     cmake --build . --config Release --parallel
 mac:
@@ -582,7 +581,6 @@ win:
         -A %WIN32X64% ^
         -DWITH_JPEG8=ON ^
         -DPNG_SUPPORTED=OFF
-    cmake --build . --config Debug --parallel
 release:
     cmake --build . --config Release --parallel
 mac:
@@ -669,7 +667,6 @@ win:
         -DCMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" ^
         -DCMAKE_C_FLAGS_DEBUG="/MTd /Zi /Ob0 /Od /RTC1" ^
         -DCMAKE_C_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG"
-    cmake --build out --config Debug --parallel
     cmake --build out --config Release --parallel
     cmake --install out --config Release
 mac:
@@ -689,7 +686,7 @@ stage('rnnoise', """
     cd out
 win:
     cmake -A %WIN32X64% ..
-    cmake --build . --config Debug --parallel
+
 release:
     cmake --build . --config Release --parallel
 !win:
@@ -883,8 +880,6 @@ win:
         -DBUILD_SHARED_LIBS=OFF ^
         -DAVIF_ENABLE_WERROR=OFF ^
         -DAVIF_CODEC_DAV1D=ON
-    cmake --build . --config Debug --parallel
-    cmake --install . --config Debug
 release:
     cmake --build . --config Release --parallel
     cmake --install . --config Release
@@ -919,8 +914,6 @@ win:
         -DBUILD_SHARED_LIBS=OFF ^
         -DENABLE_DECODER=OFF ^
         -DENABLE_ENCODER=OFF
-    cmake --build . --config Debug --parallel
-    cmake --install . --config Debug
 release:
     cmake --build . --config Release --parallel
     cmake --install . --config Release
@@ -1001,8 +994,6 @@ win:
         -DWITH_RAV1E=OFF ^
         -DWITH_RAV1E_PLUGIN=OFF ^
         -DWITH_EXAMPLES=OFF
-    cmake --build . --config Debug --parallel
-    cmake --install . --config Debug
 release:
     cmake --build . --config Release --parallel
     cmake --install . --config Release
@@ -1065,8 +1056,6 @@ win:
         -DCMAKE_C_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG" ^
         -DCMAKE_CXX_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG" ^
         %cmake_defines%
-    cmake --build . --config Debug --parallel
-    cmake --install . --config Debug
 release:
     cmake --build . --config Release --parallel
     cmake --install . --config Release
@@ -1389,7 +1378,6 @@ win:
         -D ALSOFT_UTILS=OFF ^
         -D ALSOFT_EXAMPLES=OFF ^
         -D ALSOFT_TESTS=OFF
-    cmake --build build --config Debug --parallel
 release:
     cmake --build build --config RelWithDebInfo --parallel
 mac:
@@ -1537,11 +1525,6 @@ win:
     cd out
     mkdir Debug
     cd Debug
-    cmake -G Ninja ^
-        -DCMAKE_BUILD_TYPE=Debug ^
-        -DTG_ANGLE_SPECIAL_TARGET=%SPECIAL_TARGET% ^
-        -DTG_ANGLE_ZLIB_INCLUDE_PATH=%LIBS_DIR%/zlib ../..
-    ninja
 release:
     cd ..
     mkdir Release
@@ -1575,7 +1558,7 @@ win:
 
     SET CONFIGURATIONS=-debug
 release:
-    SET CONFIGURATIONS=-debug-and-release
+    SET CONFIGURATIONS=-release
 win:
     """ + removeDir('"%LIBS_DIR%\\Qt-' + qt + '"') + """
     SET ANGLE_DIR=%LIBS_DIR%\\tg_angle
@@ -1625,11 +1608,10 @@ mac:
 
     CONFIGURATIONS=-debug
 release:
-    CONFIGURATIONS=-debug-and-release
+    CONFIGURATIONS=-release
 mac:
     ./configure -prefix "$USED_PREFIX/Qt-$QT" \
         $CONFIGURATIONS \
-        -force-debug-info \
         -opensource \
         -confirm-license \
         -static \
@@ -1741,8 +1723,7 @@ win:
         -D LCMS2_INCLUDE_DIR="%LCMS2_DIR%\\include" ^
         -D LCMS2_LIBRARIES="%LCMS2_DIR%\\out\\Release\\src\\liblcms2.a"
 
-    cmake --build . --config Debug --parallel
-    cmake --install . --config Debug
+
     cmake --build . --parallel
     cmake --install .
 """)
@@ -1764,17 +1745,6 @@ win:
     cd out
     mkdir Debug
     cd Debug
-    cmake -G Ninja \
-        -DCMAKE_BUILD_TYPE=Debug \
-        -DTG_OWT_BUILD_AUDIO_BACKENDS=OFF \
-        -DTG_OWT_SPECIAL_TARGET=$SPECIAL_TARGET \
-        -DTG_OWT_LIBJPEG_INCLUDE_PATH=$MOZJPEG_PATH \
-        -DTG_OWT_OPENSSL_INCLUDE_PATH=$OPENSSL_PATH \
-        -DTG_OWT_OPUS_INCLUDE_PATH=$OPUS_PATH \
-        -DTG_OWT_LIBVPX_INCLUDE_PATH=$LIBVPX_PATH \
-        -DTG_OWT_OPENH264_INCLUDE_PATH=$OPENH264_PATH \
-        -DTG_OWT_FFMPEG_INCLUDE_PATH=$FFMPEG_PATH ../..
-    ninja
 release:
     cd ..
     mkdir Release
@@ -1875,7 +1845,6 @@ win:
         -D CMAKE_MSVC_RUNTIME_LIBRARY="MultiThreaded$<$<CONFIG:Debug>:Debug>" ^
         -D CMAKE_C_FLAGS_DEBUG="/MTd /Zi /Ob0 /Od /RTC1" ^
         -D CMAKE_C_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG"
-    cmake --build out --config Debug --parallel
     cmake --build out --config Release --parallel
 mac:
     CFLAGS="$UNGUARDED" CPPFLAGS="$UNGUARDED" cmake -B build . \\
@@ -1906,7 +1875,7 @@ win:
         -Dprotobuf_WITH_ZLIB_DEFAULT=OFF ^
         -Dprotobuf_DEBUG_POSTFIX=""
     cmake --build . --config Release --parallel
-    cmake --build . --config Debug --parallel
+
 """)
 # mac:
 #     git clone --recursive -b v21.9 https://github.com/protocolbuffers/protobuf
