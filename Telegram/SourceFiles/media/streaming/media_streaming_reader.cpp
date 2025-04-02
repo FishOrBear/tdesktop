@@ -42,9 +42,9 @@ constexpr auto kPartsOutsideFirstSliceGood = 8;
 // 控制内存中缓存的数据量
 constexpr auto kSlicesInMemory = 2;
 
-// 预加载的分片数量为32(8*4)
+// 预加载的分片数量为128m
 // 提前从云端请求1MB的数据(超前于当前读取需求)
-constexpr auto kPreloadPartsAhead = 8*6;
+constexpr auto kPreloadPartsAhead = 8 * 32;
 
 // 同时进行的下载请求数量限制为16(4*4)
 // 控制并发下载数,防止请求过多

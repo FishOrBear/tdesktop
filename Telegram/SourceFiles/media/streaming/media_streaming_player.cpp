@@ -26,7 +26,7 @@ constexpr auto kBufferFor = 3 * crl::time(1000);
 // 远程文件的预加载时长为32秒
 // 对于网络上的媒体文件,提前加载32秒的内容
 // 这样可以保证流畅播放,减少卡顿
-constexpr auto kLoadInAdvanceForRemote = 300 * crl::time(1000);
+constexpr auto kLoadInAdvanceForRemote = 1800 * crl::time(1000);
 
 // 本地文件的预加载时长为5秒
 // 对于本地媒体文件,由于读取速度快,只需预加载5秒
