@@ -283,7 +283,8 @@ void Reader::Slice::processCacheData(PartsMap &&data) {
 }
 
 void Reader::Slice::addPart(uint32 offset, QByteArray bytes) {
-	Expects(!parts.contains(offset));
+	if (parts.contains(offset)) { return; }
+	//Expects(!parts.contains(offset));
 
 	parts.emplace(offset, std::move(bytes));
 	if (flags & Flag::LoadedFromCache) {
@@ -571,6 +572,16 @@ void Reader::Slices::processPart(
 	checkSliceFullLoaded(index + 1);
 }
 
+bool Reader::Slices::hasPart(uint32 offset) const {
+	Expects(offset < _size);
+
+	if (isFullInHeader()) {
+		return _header.parts.contains(offset);
+	}
+	const auto index = offset / kInSlice;
+	return _data[index].parts.contains(offset - index * kInSlice);
+}
+
 auto Reader::Slices::fill(uint32 offset, bytes::span buffer) -> FillResult {
 	Expects(!buffer.empty());
 	Expects(offset < _size);
@@ -606,6 +617,7 @@ auto Reader::Slices::fill(uint32 offset, bytes::span buffer) -> FillResult {
 		if (cacheNotLoaded(sliceIndex)) {
 			return;
 		}
+		//..之前在这里错误了
 		for (const auto offset : prepared.offsetsFromLoader.values()) {
 			const auto full = offset + sliceIndex * kInSlice;
 			if (offset < kInSlice && full < _size) {
@@ -1147,7 +1159,7 @@ void Reader::setLoaderPriority(int priority) {
 
 void Reader::refreshLoaderPriority() {
 	//_loader->setPriority(_streamingActive ? _realPriority : 0);
-	_loader->setPriority(0);//避免文件在播放时后台下载没速度
+	//_loader->setPriority(0);//避免文件在播放时后台下载没速度
 }
 
 bool Reader::isRemoteLoader() const {
@@ -1321,13 +1333,39 @@ Reader::FillState Reader::fillFromSlices(uint32 offset, bytes::span buffer) {
 		putToCache(std::move(result.toCache));
 	}
 	auto checkPriority = true;
+	uint32 endOffset = 0;
 	for (const auto offset : result.offsetsFromLoader.values()) {
 		if (checkPriority) {
 			checkLoadWillBeFirst(offset);
 			checkPriority = false;
 		}
+
+		if(_slices.hasPart(offset)) {
+			continue;
+		}
 		loadAtOffset(offset);
+
+		endOffset = offset;
 	}
+
+	if(endOffset != 0)
+	{
+		for (size_t i = 0; i < 64; i++)
+		{
+			endOffset += kPartSize;
+			if (endOffset < _slices._size) {
+				if(!_slices.hasPart(endOffset))
+					loadAtOffset(endOffset);
+				else
+					i--;
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+
 	return result.state;
 }
 

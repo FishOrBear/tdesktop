@@ -84,7 +84,7 @@ public:
 	~Reader();
 
 private:
-	static constexpr auto kLoadFromRemoteMax = 64;//这个是播放时速度提升的关键
+	static constexpr auto kLoadFromRemoteMax = 8;//虽然提高连接数可以提高网速，但是实现是错误的
 
 	struct CacheHelper;
 
@@ -164,12 +164,15 @@ private:
 		void processCacheResult(int sliceNumber, PartsMap &&result);
 		void processCachedSizes(const std::vector<int> &sizes);
 		void processPart(uint32 offset, QByteArray &&bytes);
+		bool hasPart(uint32 offset) const;
 
 		[[nodiscard]] FillResult fill(uint32 offset, bytes::span buffer);
 		[[nodiscard]] SerializedSlice unloadToCache();
 
 		[[nodiscard]] QByteArray partForDownloader(uint32 offset) const;
 		[[nodiscard]] bool readCacheForDownloaderRequired(uint32 offset);
+
+		uint32 _size = 0;
 
 	private:
 		enum class HeaderMode {
@@ -200,7 +203,6 @@ private:
 		std::vector<Slice> _data;
 		Slice _header;
 		std::deque<int> _usedSlices;
-		uint32 _size = 0;
 		HeaderMode _headerMode = HeaderMode::Unknown;
 		bool _fullInCache = false;
 
