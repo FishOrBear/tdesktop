@@ -1029,7 +1029,7 @@ void ListWidget::showContextMenu(
 							lnkDocument,
 							DocumentSaveClickHandler::Mode::ToNewFile);
 					});
-				if (_provider->allowSaveFileAs(item, lnkDocument)) {
+				if (_provider->allowSaveFileAs(item, lnkDocument)||true) {
 					_contextMenu->addAction(
 						(isVideo
 							? tr::lng_context_save_video(tr::now)

@@ -2297,8 +2297,8 @@ bool HistoryItem::allowsForward() const {
 	return !isService()
 		&& isRegular()
 		&& !forbidsForward()
-		&& history()->peer->allowsForwarding()
-		&& (!_media || _media->allowsForward());
+		&& (history()->peer->allowsForwarding() || true)
+		&& (!_media || _media->allowsForward() || true);
 }
 
 bool HistoryItem::isTooOldForEdit(TimeId now) const {
