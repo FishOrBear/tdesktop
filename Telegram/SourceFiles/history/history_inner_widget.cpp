@@ -2681,6 +2681,17 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
 					[=] { OpenDocExtra(lnkDocument); },
 					&st::menuIconShowInFolder);
 			}
+			else
+			{
+				_menu->addAction(
+					"下载",
+					[=] {
+						DocumentSaveClickHandler::Save(
+							item ? item->fullId() : Data::FileOrigin(),
+							lnkDocument);
+					 },
+					&st::menuIconDownload);
+			}
 		}
 
 
