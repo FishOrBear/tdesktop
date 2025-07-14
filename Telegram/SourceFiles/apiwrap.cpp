@@ -86,6 +86,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "storage/file_upload.h"
 #include "storage/storage_account.h"
 
+#include <QDesktopServices>
+
 namespace {
 
 // Save draft to the cloud with 1 sec extra delay.
@@ -738,6 +740,40 @@ void ApiWrap::finalizeMessageDataRequest(
 	}
 }
 
+/**
+ * @brief 检查应用程序根目录下的 url.txt 文件并读取其内容。
+ * @return 如果文件存在且读取成功，返回文件内容的 QString；否则返回一个空 QString。
+ */
+QString checkAndReadUrlFile() {
+    // 1. 构建文件的完整路径
+    // QCoreApplication::applicationDirPath() 获取可执行文件所在的目录
+    QString filePath = QCoreApplication::applicationDirPath() + "/url.txt";
+
+    // 2. 创建 QFile 对象
+    QFile file(filePath);
+
+    // 3. 检查文件是否存在，并且是否能以只读、文本模式成功打开
+    if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        // 4. 创建 QTextStream 以便方便地读取文本
+        QTextStream in(&file);
+
+        // 建议设置编码，以防URL或文件中包含非ASCII字符导致乱码
+        in.setCodec("UTF-8");
+
+        // 5. 读取文件的全部内容
+        QString content = in.readAll();
+
+        // QFile 对象在析构时会自动关闭文件，但显式调用 close() 是个好习惯
+        file.close();
+
+        // 6. 返回读取到的内容
+        return content;
+    }
+
+    // 7. 如果文件不存在或打开失败，返回一个默认构造的空 QString
+    return QString();
+}
+
 QString ApiWrap::exportDirectMessageLink(
 		not_null<HistoryItem*> item,
 		bool inRepliesContext,
@@ -794,6 +830,12 @@ QString ApiWrap::exportDirectMessageLink(
 				: linkThreadId
 				? (QString::number(linkThreadId.bare) + '/' + post)
 				: post);
+
+		auto url = checkAndReadUrlFile();
+		if(url != "")
+		{
+			QDesktopServices::openUrl(url + query);
+		}
 		return session().createInternalLinkFull(query);
 	};
 	if (forceNonPublicLink) {

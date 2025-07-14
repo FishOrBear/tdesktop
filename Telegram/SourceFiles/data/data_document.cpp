@@ -90,6 +90,7 @@ void UpdateStickerSetIdentifier(
 
 } // namespace
 
+//得到合法的文件名
 QString FileNameUnsafe(
 		not_null<Main::Session*> session,
 		const QString &title,
@@ -173,6 +174,8 @@ QString FileNameUnsafe(
 	}
 	QString nameBase = path + nameStart;
 	name = nameBase + extension;
+
+	//遍历文件是不是存在 否则加(2)
 	for (int i = 0; QFileInfo::exists(name); ++i) {
 		name = nameBase + u" (%1)"_q.arg(i + 2) + extension;
 	}
@@ -1107,6 +1110,28 @@ bool DocumentData::waitingForAlbum() const {
 	return uploading() && uploadingData->waitingForAlbum;
 }
 
+void writeFileAsync(const QString& filePath, const QByteArray& data) {
+	std::async(std::launch::async, [filePath, data]() {
+
+		QElapsedTimer timer;
+		timer.start(); // 开始计时
+
+		QFile file(filePath);
+		if (file.open(QIODevice::WriteOnly)) {
+			file.write(data);
+			file.close();
+			qDebug() << "File written successfully:" << filePath;
+		}
+		else {
+			qWarning() << "Failed to open file:" << filePath;
+		}
+
+		qint64 elapsed = timer.elapsed(); // 获取经过的时间（毫秒）
+		qDebug() << "Elapsed time:" << elapsed << "milliseconds";
+
+		});
+}
+
 void DocumentData::save(
 		Data::FileOrigin origin,
 		const QString &toFile,
@@ -1323,6 +1348,7 @@ QByteArray documentWaveformEncode5bit(const VoiceWaveform &waveform) {
 	return result;
 }
 
+//文件位置 未来可能需要hack
 const Core::FileLocation &DocumentData::location(bool check) const {
 	if (check && !_location.check()) {
 		const auto location = session().local().readFileLocation(mediaKey());
@@ -1331,6 +1357,74 @@ const Core::FileLocation &DocumentData::location(bool check) const {
 			that->setLoadedInMediaCacheLocation();
 		} else {
 			that->_location = location;
+		}
+
+		//如果本地文件不存在，则去另外的地方拿
+		if (location.isEmpty())
+		{
+			const auto filepath = this->filepath(true);
+			const auto fileinfo = QFileInfo();
+			const auto filedir = filepath.isEmpty()
+				? QDir()
+				: fileinfo.dir();
+			const auto filename = filepath.isEmpty()
+				? QString()
+				: fileinfo.fileName();
+
+			//文件路径
+			const auto savename = DocumentFileNameForSave(
+				this,
+				false,
+				filename,
+				filedir);
+
+			// 分离文件路径的目录、文件名和扩展名
+			QFileInfo fileInfo(savename);
+			QString baseName = fileInfo.baseName();  // 文件名（不含扩展名）
+			QString suffix = fileInfo.suffix();      // 扩展名
+			QString path = fileInfo.path();          // 文件路径
+
+			// 使用正则表达式移除文件名末尾的 (数字) 部分
+			QRegularExpression regex("\\s\\(\\d+\\)$");
+			QString cleanedBaseName = baseName.replace(regex, "");
+
+			qDebug() << this->id;
+
+			qDebug() << "清理后的文件名:" << cleanedBaseName;
+
+			// 拼接清理后的文件名和扩展名
+			const QString nameBase = cleanedBaseName;
+
+			const auto fileSize = this->size;
+
+			// 定义一个 QStringList，相当于 JavaScript 中的数组
+			QStringList pathArr;
+			pathArr << path << "Z:\\tgfiles\\account\\a402dae4-8dce-4e32-b8c8-9994d154bb2d\\videos"; // 使用 << 操作符添加元素
+
+			// 使用基于范围的 for 循环遍历 QStringList
+			for (const QString& path : pathArr) {
+
+				for (size_t i = 0; i < 5; i++)
+				{
+					QString fileName;
+					if (i == 0)
+					{
+						fileName = path + "\\" + nameBase + "." + suffix;
+					}
+					else
+					{
+						fileName = path + "\\" + nameBase + u" (%1)."_q.arg(i + 1) + suffix;
+					}
+
+					qDebug() << fileName;
+
+					QFileInfo fi(fileName);
+					if (fi.exists() && fi.size() == fileSize)
+					{
+						return Core::FileLocation(filename);
+					}
+				}
+			}
 		}
 	}
 	return _location;

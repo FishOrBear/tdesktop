@@ -15,17 +15,40 @@ namespace Media {
 namespace Streaming {
 namespace {
 
+// 使用加载器定义的分片大小作为基本分片大小
 constexpr auto kPartSize = Loader::kPartSize;
+
+// 每个分片组(slice)包含64个分片
+// 用于将连续的分片组织成更大的数据块
 constexpr auto kPartsInSlice = 64;
+
+// 一个分片组的总大小(字节)
+// = 分片数 * 分片大小
 constexpr auto kInSlice = uint32(kPartsInSlice * kPartSize);
+
+// 文件头部最多包含的分片数
+// 用于限制文件头部的大小
 constexpr auto kMaxPartsInHeader = 64;
+
+// 仅在文件头部允许的最大字节数(80个分片)
+// 超过此大小的数据需要分散存储
 constexpr auto kMaxOnlyInHeader = 80 * kPartSize;
+
+// 第一个分片组之外的良好分片数
+// 用于判断数据加载质量
 constexpr auto kPartsOutsideFirstSliceGood = 8;
+
+// 内存中保留的分片组数量
+// 控制内存中缓存的数据量
 constexpr auto kSlicesInMemory = 2;
 
-// 1 MB of parts are requested from cloud ahead of reading demand.
-constexpr auto kPreloadPartsAhead = 8;
-constexpr auto kDownloaderRequestsLimit = 4;
+// 预加载的分片数量为128m
+// 提前从云端请求1MB的数据(超前于当前读取需求)
+constexpr auto kPreloadPartsAhead = 8 * 32;
+
+// 同时进行的下载请求数量限制为16(4*4)
+// 控制并发下载数,防止请求过多
+constexpr auto kDownloaderRequestsLimit = 8 * 12;//速度提升的关键
 
 using PartsMap = base::flat_map<uint32, QByteArray>;
 
@@ -260,7 +283,8 @@ void Reader::Slice::processCacheData(PartsMap &&data) {
 }
 
 void Reader::Slice::addPart(uint32 offset, QByteArray bytes) {
-	Expects(!parts.contains(offset));
+	if (parts.contains(offset)) { return; }
+	//Expects(!parts.contains(offset));
 
 	parts.emplace(offset, std::move(bytes));
 	if (flags & Flag::LoadedFromCache) {
@@ -548,6 +572,16 @@ void Reader::Slices::processPart(
 	checkSliceFullLoaded(index + 1);
 }
 
+bool Reader::Slices::hasPart(uint32 offset) const {
+	Expects(offset < _size);
+
+	if (isFullInHeader()) {
+		return _header.parts.contains(offset);
+	}
+	const auto index = offset / kInSlice;
+	return _data[index].parts.contains(offset - index * kInSlice);
+}
+
 auto Reader::Slices::fill(uint32 offset, bytes::span buffer) -> FillResult {
 	Expects(!buffer.empty());
 	Expects(offset < _size);
@@ -583,6 +617,7 @@ auto Reader::Slices::fill(uint32 offset, bytes::span buffer) -> FillResult {
 		if (cacheNotLoaded(sliceIndex)) {
 			return;
 		}
+		//..之前在这里错误了
 		for (const auto offset : prepared.offsetsFromLoader.values()) {
 			const auto full = offset + sliceIndex * kInSlice;
 			if (offset < kInSlice && full < _size) {
@@ -1103,7 +1138,7 @@ void Reader::checkCacheResultsForDownloader() {
 }
 
 void Reader::continueDownloaderFromMainThread() {
-	if (_streamingActive) {
+	if (false && _streamingActive) {//如果文件在流送,就暂停,这里关闭这个特性
 		wakeFromSleep();
 	} else {
 		processDownloaderRequests();
@@ -1123,7 +1158,8 @@ void Reader::setLoaderPriority(int priority) {
 }
 
 void Reader::refreshLoaderPriority() {
-	_loader->setPriority(_streamingActive ? _realPriority : 0);
+	//_loader->setPriority(_streamingActive ? _realPriority : 0);
+	//_loader->setPriority(0);//避免文件在播放时后台下载没速度
 }
 
 bool Reader::isRemoteLoader() const {
@@ -1297,13 +1333,39 @@ Reader::FillState Reader::fillFromSlices(uint32 offset, bytes::span buffer) {
 		putToCache(std::move(result.toCache));
 	}
 	auto checkPriority = true;
+	uint32 endOffset = 0;
 	for (const auto offset : result.offsetsFromLoader.values()) {
 		if (checkPriority) {
 			checkLoadWillBeFirst(offset);
 			checkPriority = false;
 		}
+
+		if(_slices.hasPart(offset)) {
+			continue;
+		}
 		loadAtOffset(offset);
+
+		endOffset = offset;
 	}
+
+	if(endOffset != 0)
+	{
+		for (size_t i = 0; i < 96; i++)
+		{
+			endOffset += kPartSize;
+			if (endOffset < _slices._size) {
+				if(!_slices.hasPart(endOffset))
+					loadAtOffset(endOffset);
+				else
+					i--;
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+
 	return result.state;
 }
 

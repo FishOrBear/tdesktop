@@ -15,6 +15,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_download_manager.h"
 #include "data/data_photo.h"
 #include "main/main_session.h"
+#include <QTimer>
+#include <QProcess>  // 引入 QProcess 类定义 [[2]][[6]]
 
 FileClickHandler::FileClickHandler(FullMsgId context)
 : _context(context) {
@@ -71,6 +73,26 @@ void DocumentOpenClickHandler::onClickImpl() const {
 	_handler(context());
 }
 
+void checkFileSize(const QString& savename,const int &size, int maxAttempts = 300, int attempt = 0) {
+	if (attempt >= maxAttempts) {
+		qDebug() << "检查超时，停止监控";
+		return;
+	}
+
+	// 检查文件大小
+	QFileInfo fileInfo(savename);
+	if (fileInfo.exists()  && (fileInfo.size() == size) )
+	{
+		qDebug() << fileInfo.size();
+		File::Launch(savename);
+		return;  // 文件符合条件，停止检查
+	}
+
+	QTimer::singleShot(1000, [savename,size, maxAttempts, attempt]() {
+		checkFileSize(savename,size, maxAttempts, attempt + 1);
+		});
+}
+
 void DocumentSaveClickHandler::Save(
 		Data::FileOrigin origin,
 		not_null<DocumentData*> data,
@@ -96,8 +118,7 @@ void DocumentSaveClickHandler::Save(
 			return;
 		}
 		const auto filepath = data->filepath(true);
-		const auto fileinfo = QFileInfo(
-			);
+		const auto fileinfo = QFileInfo();
 		const auto filedir = filepath.isEmpty()
 			? QDir()
 			: fileinfo.dir();
@@ -114,15 +135,87 @@ void DocumentSaveClickHandler::Save(
 			if (started) {
 				started();
 			}
+
+			// checkFileSize(savename, data->size);
 		}
 	}));
 }
 
+//点击保存
 void DocumentSaveClickHandler::SaveAndTrack(
 		FullMsgId itemId,
 		not_null<DocumentData*> document,
 		Mode mode,
 		Fn<void()> started) {
+
+			{
+				const auto filepath = document->filepath(true);
+				const auto fileinfo = QFileInfo();
+				const auto filedir = filepath.isEmpty()
+					? QDir()
+					: fileinfo.dir();
+				const auto filename = filepath.isEmpty()
+					? QString()
+					: fileinfo.fileName();
+
+				//文件路径
+				const auto savename = DocumentFileNameForSave(
+					document,
+					(mode == Mode::ToNewFile),
+					filename,
+					filedir);
+
+				// 分离文件路径的目录、文件名和扩展名
+				QFileInfo fileInfo(savename);
+				QString baseName = fileInfo.baseName();  // 文件名（不含扩展名）
+				QString suffix = fileInfo.suffix();      // 扩展名
+				QString path = fileInfo.path();          // 文件路径
+
+				// 使用正则表达式移除文件名末尾的 (数字) 部分
+				QRegularExpression regex("\\s\\(\\d+\\)$");
+				QString cleanedBaseName = baseName.replace(regex, "");
+
+				qDebug() << document->id;
+
+				qDebug() << "清理后的文件名:" << cleanedBaseName;
+
+				// 拼接清理后的文件名和扩展名
+				const QString nameBase = cleanedBaseName;
+
+				const auto fileSize = document->size;
+
+				// 定义一个 QStringList，相当于 JavaScript 中的数组
+				QStringList pathArr;
+				pathArr << path << "Z:\\tgfiles\\account\\a402dae4-8dce-4e32-b8c8-9994d154bb2d\\videos"; // 使用 << 操作符添加元素
+
+				// 使用基于范围的 for 循环遍历 QStringList
+				for (const QString& path : pathArr) {
+
+					for (size_t i = 0; i < 5; i++)
+					{
+						QString fileName;
+						if (i == 0)
+						{
+							fileName = path + "\\" + nameBase + "." + suffix;
+						}
+						else
+						{
+							fileName = path + "\\" + nameBase + u" (%1)."_q.arg(i + 1) + suffix;
+						}
+
+						qDebug() << fileName;
+
+						QFileInfo fi(fileName);
+						if (fi.exists() && fi.size() == fileSize)
+						{
+							File::Launch(fileName);
+							return;
+						}
+					}
+				}
+			}
+
+
 	Save(itemId ? itemId : Data::FileOrigin(), document, mode, [=] {
 		if (document->loading() && !document->loadingFilePath().isEmpty()) {
 			if (const auto item = document->owner().message(itemId)) {
