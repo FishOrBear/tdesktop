@@ -157,6 +157,13 @@ Main::Session &ListWidget::session() const {
 	return _controller->session();
 }
 
+void OpenDocExtra(not_null<DocumentData*> document) {
+	const auto filepath = document->filepath(true);
+	if (!filepath.isEmpty()) {
+		File::Launch(filepath);
+	}
+}
+
 void ListWidget::start() {
 	setMouseTracking(true);
 
@@ -983,6 +990,11 @@ void ListWidget::showContextMenu(
 
 		if (lnkPhoto) {
 		} else {
+			_contextMenu->addAction(
+				tr::lng_context_open_extra(tr::now),
+				[=] { OpenDocExtra(lnkDocument); },
+				& st::menuIconShowInFolder);
+
 			if (lnkDocument->loading()) {
 				_contextMenu->addAction(
 					tr::lng_context_cancel_download(tr::now),
@@ -1017,7 +1029,7 @@ void ListWidget::showContextMenu(
 							lnkDocument,
 							DocumentSaveClickHandler::Mode::ToNewFile);
 					});
-				if (_provider->allowSaveFileAs(item, lnkDocument)) {
+				if (_provider->allowSaveFileAs(item, lnkDocument)||true) {
 					_contextMenu->addAction(
 						(isVideo
 							? tr::lng_context_save_video(tr::now)

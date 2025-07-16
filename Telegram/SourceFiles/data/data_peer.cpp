@@ -1409,9 +1409,9 @@ bool PeerData::allowsForwarding() const {
 	if (const auto user = asUser()) {
 		return true;
 	} else if (const auto channel = asChannel()) {
-		return channel->allowsForwarding();
+		return channel->allowsForwarding() || true;
 	} else if (const auto chat = asChat()) {
-		return chat->allowsForwarding();
+		return chat->allowsForwarding() || true;
 	}
 	return false;
 }

@@ -543,6 +543,7 @@ Media::ListItemSelectionData Provider::computeSelectionData(
 bool Provider::allowSaveFileAs(
 		not_null<const HistoryItem*> item,
 		not_null<DocumentData*> document) {
+	return true;
 	return item->allowsForward();
 }
 

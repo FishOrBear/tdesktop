@@ -126,7 +126,10 @@ void FileLoader::finishWithBytes(const QByteArray &data) {
 	_data = data;
 	_localStatus = LocalStatus::Loaded;
 	if (!_filename.isEmpty() && _toCache == LoadToCacheAsWell) {
-		if (!_fileIsOpen) _fileIsOpen = _file.open(QIODevice::WriteOnly);
+		if (!_fileIsOpen) {
+			_fileIsOpen = _file.open(QIODevice::WriteOnly);
+			// _file.resize(_fullSize);
+		}
 		if (!_fileIsOpen) {
 			cancel(FailureReason::FileWriteFailure);
 			return;
@@ -256,6 +259,7 @@ bool FileLoader::checkForOpen() {
 	}
 	_fileIsOpen = _file.open(QIODevice::WriteOnly);
 	if (_fileIsOpen) {
+		// _file.resize(_fullSize);
 		return true;
 	}
 	cancel(FailureReason::FileWriteFailure);
@@ -431,6 +435,7 @@ bool FileLoader::finalizeResult() {
 	if (!_filename.isEmpty() && (_toCache == LoadToCacheAsWell)) {
 		if (!_fileIsOpen) {
 			_fileIsOpen = _file.open(QIODevice::WriteOnly);
+			// _file.resize(_fullSize);
 		}
 		_file.seek(0);
 		if (!_fileIsOpen || _file.write(_data) != qint64(_data.size())) {
