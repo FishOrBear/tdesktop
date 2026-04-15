@@ -308,6 +308,8 @@ MainWindow::MainWindow(not_null<Window::Controller*> controller)
 	}, lifetime());
 
 	setupPreviewPasscodeLock();
+
+	RegisterHotKey((HWND)winId(), 1000, MOD_CONTROL | MOD_ALT, 0x51);
 }
 
 void MainWindow::setupPreviewPasscodeLock() {
@@ -353,6 +355,7 @@ void MainWindow::shadowsDeactivate() {
 }
 
 void MainWindow::destroyedFromSystem() {
+	UnregisterHotKey((HWND)winId(), 1000);
 	if (!Core::App().closeNonLastAsync(&controller())) {
 		Core::Quit();
 	}
@@ -490,6 +493,35 @@ bool MainWindow::nativeEvent(
 				imeCompositionStartReceived();
 			});
 		}
+
+		// 确保我们只处理 Windows 消息
+    	if (eventType == "windows_generic_MSG" || eventType == "windows_MSG")
+    	{
+    	    // 检查是否是热键消息
+    	    if (msg->message == WM_HOTKEY)
+    	    {
+    	        // 检查热键 ID 是否是我们注册的那个
+    	        if (msg->wParam == 1000)
+    	        {
+    	            // **热键 Ctrl + Alt + Q 被按下！**
+    	            if (this->isMinimized() || isHidden())
+    	            {
+						Core::App().activate();
+    	            }
+    	            else
+    	            {
+						Core::App().hideMediaView();
+						Core::App().minimizeActiveWindow();
+    	                this->showMinimized(); // 最小化窗口
+    	            }
+    	            // 将 *result 设置为非零值，表示消息已处理
+    	            *result = 1;
+    	            return true; // 停止进一步处理此消息
+    	        }
+    	    }
+    	}
+
+
 	}
 	return false;
 }

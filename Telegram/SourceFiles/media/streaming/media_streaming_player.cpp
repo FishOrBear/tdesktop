@@ -31,7 +31,7 @@ constexpr auto kLoadInAdvanceForRemote = 1800 * crl::time(1000);
 // 本地文件的预加载时长为5秒
 // 对于本地媒体文件,由于读取速度快,只需预加载5秒
 // 可以减少内存占用
-constexpr auto kLoadInAdvanceForLocal = 5 * crl::time(1000);
+constexpr auto kLoadInAdvanceForLocal = 15 * crl::time(1000);
 
 // 毫秒频率:1秒 = 1000毫秒
 // 用于时间单位转换的常量

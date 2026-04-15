@@ -1360,7 +1360,7 @@ const Core::FileLocation &DocumentData::location(bool check) const {
 		}
 
 		//如果本地文件不存在，则去另外的地方拿
-		if (location.isEmpty())
+		if (false && location.isEmpty())
 		{
 			const auto filepath = this->filepath(true);
 			const auto fileinfo = QFileInfo();

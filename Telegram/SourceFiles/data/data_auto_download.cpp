@@ -268,7 +268,8 @@ bool Should(
 	} else if (document->isVoiceMessage()
 		|| document->isVideoMessage()
 		|| document->isSong()
-		|| document->isVideoFile()) {
+		// || document->isVideoFile()
+		) {
 		return false;
 	}
 	return data.shouldDownload(source, Type::File, document->size);

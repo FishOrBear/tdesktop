@@ -1350,7 +1350,7 @@ Reader::FillState Reader::fillFromSlices(uint32 offset, bytes::span buffer) {
 
 	if(endOffset != 0)
 	{
-		for (size_t i = 0; i < 96; i++)
+		for (size_t i = 0; i < 16; i++)
 		{
 			endOffset += kPartSize;
 			if (endOffset < _slices._size) {

@@ -940,9 +940,12 @@ Pip::Pip(
 
 Pip::~Pip() = default;
 
+
 std::shared_ptr<Streaming::Document> Pip::shared() const {
 	return _instance->shared();
 }
+
+constexpr auto kSeekStepSeconds = 5;
 
 void Pip::setupPanel() {
 	_panel.init();
@@ -978,6 +981,17 @@ void Pip::setupPanel() {
 		switch (e->type()) {
 		case QEvent::Close: handleClose(); break;
 		case QEvent::Leave: handleLeave(); break;
+		case QEvent::KeyPress: {
+			// 1. 将通用事件转换为键盘事件
+			const auto keyEvent = static_cast<QKeyEvent*>(e.get());
+			// 2. 检查是否按下了 'Q' 键
+			if (keyEvent->key() == Qt::Key_Q
+			|| 	keyEvent->key() == Qt::Key_Escape)
+			{
+				handleClose();
+			}
+			break;
+		}
 		case QEvent::MouseMove:
 			handleMouseMove(mousePosition());
 			break;
@@ -989,6 +1003,77 @@ void Pip::setupPanel() {
 			break;
 		case QEvent::MouseButtonDblClick:
 			handleDoubleClick(mouseButton());
+			break;
+
+		// **>>>>>>>>>> 在这里添加 QEvent::Wheel 处理 <<<<<<<<<<**
+		case QEvent::Wheel:
+			auto y= static_cast<QWheelEvent*>(e.get())->angleDelta().y();
+
+			const auto state = _instance->player().prepareLegacyState();
+			const auto playFrequency = state.frequency;
+			const auto totalMs = _lastDurationMs;
+
+			// 2. 确定当前位置 (毫秒)
+			// 参考 updatePlaybackState 的逻辑，获取 position (频率计数)
+			qint64 positionCount = 0;
+			if (Player::IsStoppedAtEnd(state.state)) {
+				positionCount = state.length;
+			}
+			else if (!Player::IsStoppedOrStopping(state.state)) {
+				positionCount = state.position;
+			}
+			else {
+				positionCount = 0;
+			}
+
+			// 将当前位置从频率计数转换为毫秒
+			const auto currentMs = (positionCount * crl::time(kMsInSecond)) / playFrequency;
+
+			// 3. 计算新的跳转目标时间 (毫秒)
+			// 定义快进/快退的步长：5 秒 (5000 毫秒)
+			constexpr crl::time kSeekStepMs = kSeekStepSeconds * kMsInSecond;
+
+			// 确定方向：向上滚动 (delta > 0) -> 快进
+			const auto direction = (y > 0) ? 1 : -1;
+
+			const auto targetMs = currentMs + (direction * kSeekStepMs);
+
+			// 4. 钳制新时间并执行跳转
+			// 确保不小于 0 且不大于总时长
+			const auto newTime = std::clamp(
+				targetMs,
+				crl::time(0),
+				totalMs
+			);
+
+			if (newTime != currentMs) {
+				// 计算新的进度值 [0.0, 1.0]
+				const auto progressValue = static_cast<float64>(newTime) / totalMs;
+
+				// 执行跳转的核心逻辑 (类似 seekFinish)
+				_seekPositionMs = -1; // 重置，允许 seek 发生
+				// 保持或恢复播放状态的逻辑
+				_startPaused = _instance->player().paused();
+
+				// 调用实际执行 seek 的函数
+				restartAtSeekPosition(newTime);
+
+				// 更新 UI 状态
+				_playbackProgress->setValue(progressValue, false);
+
+				// 需要计算新的 position (频率计数) 来更新文本
+				// position (count) = (newTime (ms) * playFrequency) / 1000
+				const auto newPositionCount = (newTime * playFrequency) / crl::time(kMsInSecond);
+
+				updatePlaybackTexts(
+					static_cast<int64>(newPositionCount),
+					state.length,
+					playFrequency
+				);
+
+				_panel.update(); // 强制重绘
+			}
+
 			break;
 		}
 	}, _panel.rp()->lifetime());
@@ -1089,6 +1174,12 @@ void Pip::handleMousePress(QPoint position, Qt::MouseButton button) {
 			_panel.handleMousePress(position, button);
 		}
 	});
+
+	if (button == Qt::MidButton) {
+		handleClose();
+		return;
+	}
+
 	if (button != Qt::LeftButton) {
 		return;
 	}
@@ -1283,8 +1374,8 @@ void Pip::setupButtons() {
 		_volumeToggle.icon = _volumeToggle.area.marginsRemoved(
 			{ skip, skip, skip, skip });
 		_play.icon = QRect(
-			rect.x() + (rect.width() - st::pipPlayIcon.width()) / 2,
-			rect.y() + (rect.height() - st::pipPlayIcon.height()) / 2,
+			rect.x(),
+			rect.y() + (rect.height() - st::pipPlayIcon.height() - 30),
 			st::pipPlayIcon.width(),
 			st::pipPlayIcon.height());
 		const auto volumeArea = _volumeController.area;
@@ -1416,7 +1507,7 @@ void Pip::paint(not_null<Renderer*> renderer) const {
 		.attached = (_panel.useTransparency()
 			? _panel.attached()
 			: RectPart::AllSides),
-		.fade = controlsShown,
+		.fade = 0.,
 		.outer = _panel.widget()->size(),
 		.rotation = _rotation,
 		.videoRotation = _instance->info().video.rotation,

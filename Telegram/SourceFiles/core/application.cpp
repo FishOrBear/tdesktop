@@ -627,9 +627,10 @@ bool Application::isActiveForTrayMenu() const {
 
 bool Application::hideMediaView() {
 	if (_mediaView
-		&& _mediaView->isFullScreen()
-		&& !_mediaView->isMinimized()
-		&& !_mediaView->isHidden()) {
+		//&& _mediaView->isFullScreen()
+		//&& !_mediaView->isMinimized()
+		//&& !_mediaView->isHidden()
+		) {
 		_mediaView->close();
 		return true;
 	}
